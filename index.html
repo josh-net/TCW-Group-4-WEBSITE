@@ -306,7 +306,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const headOpen = template.match(/<head[^>]*>/i);
     if (headOpen) {
       const i = headOpen.index + headOpen[0].length;
-      template = template.slice(0, i) + resourceScript + template.slice(i);
+      const responsiveHead = '<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="styles.css">';
+      template = template.slice(0, i) + responsiveHead + resourceScript + template.slice(i);
     }
 
     // Parse the template and swap the root element. Scripts inserted via
@@ -315,6 +316,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     // preserve ordering (React before ReactDOM before Babel before text/babel).
     const doc = new DOMParser().parseFromString(template, 'text/html');
     document.documentElement.replaceWith(doc.documentElement);
+    const nav = document.querySelector('nav[aria-label="Main navigation"]');
+    const navLinks = nav && nav.children[1];
+    if (nav && navLinks) {
+      const menu = document.createElement('details');
+      menu.className = 'mobile-nav';
+      const summary = document.createElement('summary');
+      summary.textContent = 'Menu';
+      summary.setAttribute('aria-label', 'Toggle navigation menu');
+      menu.appendChild(summary);
+      nav.insertBefore(menu, navLinks);
+      menu.appendChild(navLinks);
+    }
 
     // Resolve page-frame markers: mint this document's own blob for each
     // framed page — from local text when this is the root, otherwise by
@@ -364,6 +377,31 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
       window.Babel.transformScriptTags();
     }
+
+    const syncMenu = () => {
+      const mobileMenu = document.querySelector('nav details.mobile-nav');
+      if (mobileMenu) {
+        mobileMenu.open = window.matchMedia('(min-width: 701px)').matches;
+      }
+    };
+    document.addEventListener('click', (event) => {
+      const mobileMenu = document.querySelector('nav details.mobile-nav');
+      const target = event.target;
+      if (mobileMenu && target instanceof Element) {
+        const link = target.closest('a[href^="#"]');
+        if (link && mobileMenu.contains(link)) {
+          mobileMenu.open = false;
+        } else if (!mobileMenu.contains(target)) {
+          mobileMenu.open = false;
+        }
+      }
+    }, true);
+    window.addEventListener('hashchange', () => {
+      const mobileMenu = document.querySelector('nav details.mobile-nav');
+      if (mobileMenu) mobileMenu.open = false;
+    });
+    window.requestAnimationFrame(syncMenu);
+    window.addEventListener('resize', syncMenu);
   } catch (err) {
     setStatus('Error unpacking: ' + err.message);
     console.error('Bundle unpack error:', err);
