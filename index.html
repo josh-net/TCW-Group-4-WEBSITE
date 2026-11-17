@@ -381,13 +381,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     const syncMenu = () => {
       const mobileMenu = document.querySelector('nav details.mobile-nav');
       if (mobileMenu) {
-        mobileMenu.open = window.matchMedia('(min-width: 701px)').matches;
+        mobileMenu.open = window.matchMedia('(min-width: 901px)').matches;
       }
     };
     document.addEventListener('click', (event) => {
       const mobileMenu = document.querySelector('nav details.mobile-nav');
       const target = event.target;
-      if (mobileMenu && target instanceof Element) {
+      if (mobileMenu && !window.matchMedia('(min-width: 901px)').matches && target instanceof Element) {
         const link = target.closest('a[href^="#"]');
         if (link && mobileMenu.contains(link)) {
           mobileMenu.open = false;
@@ -398,7 +398,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     }, true);
     window.addEventListener('hashchange', () => {
       const mobileMenu = document.querySelector('nav details.mobile-nav');
-      if (mobileMenu) mobileMenu.open = false;
+      if (mobileMenu && !window.matchMedia('(min-width: 901px)').matches) {
+        mobileMenu.open = false;
+      }
     });
     window.requestAnimationFrame(syncMenu);
     window.addEventListener('resize', syncMenu);

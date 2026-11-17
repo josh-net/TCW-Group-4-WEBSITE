@@ -1,10 +1,4 @@
-@media (max-width: 700px) {
-  html,
-  body {
-    width: 100%;
-    overflow-x: hidden;
-  }
-
+@media (max-width: 900px) {
   header {
     position: sticky;
     top: 0;
@@ -141,6 +135,14 @@
     color: #b9a8ff !important;
     outline: none;
   }
+}
+
+@media (max-width: 700px) {
+  html,
+  body {
+    width: 100%;
+    overflow-x: hidden;
+  }
 
   section {
     scroll-margin-top: 104px;
@@ -270,7 +272,7 @@
   }
 }
 
-@media (min-width: 701px) {
+@media (min-width: 901px) {
   nav > details.mobile-nav {
     display: contents;
   }
