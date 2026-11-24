@@ -165,6 +165,34 @@
     overflow-wrap: anywhere;
   }
 
+  sc-raw-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed;
+  }
+
+  sc-raw-th,
+  sc-raw-td {
+    box-sizing: border-box;
+    display: table-cell;
+    width: auto !important;
+    padding: 8px 6px !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  sc-raw-table sc-raw-tr {
+    display: table-row;
+  }
+
+  sc-raw-table sc-raw-thead {
+    display: table-header-group;
+  }
+
+  sc-raw-table sc-raw-tbody {
+    display: table-row-group;
+  }
+
   section {
     scroll-margin-top: 104px;
   }
