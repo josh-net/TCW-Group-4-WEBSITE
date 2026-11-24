@@ -1,8 +1,29 @@
 @media (max-width: 900px) {
+  body.mobile-nav-open {
+    overflow: hidden;
+  }
+
+  .mobile-nav-backdrop {
+    position: fixed;
+    inset: 60px 0 0;
+    z-index: 90;
+    background: rgba(7, 12, 24, 0.42);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+
+  .mobile-nav-backdrop.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   header {
     position: sticky;
     top: 0;
     z-index: 100;
+    box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
   }
 
   nav {
@@ -88,24 +109,38 @@
   nav > details.mobile-nav > div {
     box-sizing: border-box;
     position: absolute;
-    top: 100%;
-    right: 0;
-    left: 0;
+    top: calc(100% + 8px);
+    right: 12px;
+    left: 12px;
     z-index: 110;
     display: flex !important;
-    width: 100%;
-    max-width: none;
+    width: auto;
+    max-width: 420px;
+    margin-left: auto;
     max-height: calc(100vh - 60px);
     flex-direction: column !important;
     flex-wrap: nowrap !important;
-    gap: 2px !important;
+    gap: 4px !important;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 8px 18px 14px;
-    border-top: 1px solid rgba(228, 224, 255, 0.2);
-    border-radius: 0 0 16px 16px;
-    background: #101828;
-    box-shadow: 0 16px 28px rgba(16, 24, 40, 0.28);
+    padding: 10px;
+    border: 1px solid rgba(185, 168, 255, 0.22);
+    border-radius: 16px;
+    background: #1a2440;
+    box-shadow: 0 18px 44px rgba(7, 12, 24, 0.42);
+    transform-origin: top right;
+    animation: mobile-menu-in 220ms cubic-bezier(.2, .8, .2, 1) both;
+  }
+
+  @keyframes mobile-menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
   nav > details.mobile-nav:not([open]) > div {
@@ -116,15 +151,17 @@
     box-sizing: border-box;
     display: flex;
     width: 100%;
-    min-height: 44px;
+    min-height: 46px;
     align-items: center;
-    padding: 10px 8px !important;
-    border-radius: 10px;
+    padding: 11px 14px !important;
+    border: 1px solid transparent;
+    border-radius: 12px;
     color: #e4e0ff !important;
     font-size: 15px !important;
     font-weight: 600;
     white-space: nowrap;
     text-decoration: none;
+    transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease;
   }
 
   nav > details.mobile-nav > div > a::after {
@@ -133,9 +170,26 @@
 
   nav > details.mobile-nav > div > a:hover,
   nav > details.mobile-nav > div > a:focus-visible {
-    background: #2a3550;
+    background: #303d61;
+    border-color: rgba(185, 168, 255, 0.18);
     color: #b9a8ff !important;
+    transform: translateX(3px);
     outline: none;
+  }
+
+  nav > details.mobile-nav > div > a.is-active {
+    background: linear-gradient(90deg, rgba(255, 107, 74, 0.18), rgba(185, 168, 255, 0.12));
+    border-color: rgba(255, 107, 74, 0.28);
+    color: #ffffff !important;
+  }
+
+  nav > details.mobile-nav > div > a.is-active::before {
+    width: 3px;
+    height: 24px;
+    margin-right: 10px;
+    border-radius: 999px;
+    background: #ff6b4a;
+    content: "";
   }
 }
 
@@ -335,5 +389,14 @@
 
   nav > details.mobile-nav > div {
     display: flex !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  nav > details.mobile-nav > div,
+  .mobile-nav-backdrop,
+  nav > details.mobile-nav > div > a {
+    animation: none !important;
+    transition: none !important;
   }
 }
