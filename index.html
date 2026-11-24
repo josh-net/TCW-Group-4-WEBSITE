@@ -321,6 +321,7 @@ document.addEventListener('DOMContentLoaded', async function() {
               /(<a href="#home"[^>]*>Beyond the Label<\/a>)(\s*)(<div\s)/,
               '$1$2<details class="mobile-nav"><summary aria-label="Toggle navigation menu">Menu</summary>$3'
             );
+            navMarkup = navMarkup.replace(/<div style="display:flex;flex-wrap:wrap;gap:4px 20px">/, '<div class="mobile-nav-panel" style="display:flex;flex-wrap:wrap;gap:4px 20px">');
             navMarkup += '</details>';
             template = template.slice(0, navStart) + navMarkup + template.slice(navEnd);
           }
@@ -334,18 +335,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     // preserve ordering (React before ReactDOM before Babel before text/babel).
     const doc = new DOMParser().parseFromString(template, 'text/html');
     document.documentElement.replaceWith(doc.documentElement);
-    const nav = document.querySelector('nav[aria-label="Main navigation"]');
-    const navLinks = nav && nav.querySelector(':scope > div');
-    if (nav && navLinks) {
-      const menu = document.createElement('details');
-      menu.className = 'mobile-nav';
-      const summary = document.createElement('summary');
-      summary.textContent = 'Menu';
-      summary.setAttribute('aria-label', 'Toggle navigation menu');
-      menu.appendChild(summary);
-      nav.insertBefore(menu, navLinks);
-      menu.appendChild(navLinks);
-    }
 
     // Resolve page-frame markers: mint this document's own blob for each
     // framed page — from local text when this is the root, otherwise by
@@ -395,34 +384,29 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
       window.Babel.transformScriptTags();
     }
+    let backdrop = document.querySelector('.mobile-nav-backdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.className = 'mobile-nav-backdrop';
+      backdrop.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(backdrop);
+    }
     const syncMenu = () => {
       const mobileMenu = document.querySelector('nav details.mobile-nav');
-      const backdrop = document.querySelector('.mobile-nav-backdrop');
-      if (mobileMenu) {
-        const desktop = window.matchMedia('(min-width: 901px)').matches;
-        mobileMenu.open = desktop;
-        if (desktop) {
-          if (backdrop) backdrop.classList.remove('is-visible');
-          document.body.classList.remove('mobile-nav-open');
-        }
-      }
-    };
-    const syncMobileMenu = (mobileMenu) => {
-      let backdrop = document.querySelector('.mobile-nav-backdrop');
-      if (!backdrop) {
-        backdrop = document.createElement('div');
-        backdrop.className = 'mobile-nav-backdrop';
-        backdrop.setAttribute('aria-hidden', 'true');
-        document.body.appendChild(backdrop);
-        backdrop.addEventListener('click', () => {
-          mobileMenu.open = false;
-        });
-      }
-      const openOnMobile = !!mobileMenu.open && window.innerWidth <= 900;
-      backdrop.classList.toggle('is-visible', openOnMobile);
+      if (!mobileMenu) return;
+      const desktop = window.matchMedia('(min-width: 901px)').matches;
+      if (desktop) mobileMenu.open = true;
+      const openOnMobile = mobileMenu.open && !desktop;
+      document.querySelector('.mobile-nav-backdrop')?.classList.toggle('is-visible', openOnMobile);
       document.body.classList.toggle('mobile-nav-open', openOnMobile);
-      mobileMenu.querySelector('summary')?.setAttribute('aria-expanded', String(openOnMobile));
+      mobileMenu.querySelector('summary')?.setAttribute('aria-expanded', String(mobileMenu.open));
     };
+    const closeMenu = () => {
+      const mobileMenu = document.querySelector('nav details.mobile-nav');
+      if (mobileMenu) mobileMenu.open = false;
+      syncMenu();
+    };
+    backdrop.addEventListener('click', closeMenu);
     const updateActiveNavLink = () => {
       const hash = window.location.hash || '#home';
       document.querySelectorAll('nav details.mobile-nav > div > a').forEach((link) => {
@@ -435,64 +419,57 @@ document.addEventListener('DOMContentLoaded', async function() {
       polishedMenuStyle.textContent = `
         @media (max-width:900px){
           body.mobile-nav-open{overflow:hidden!important}
-          .mobile-nav-backdrop{position:fixed!important;inset:60px 0 0!important;z-index:90!important;background:rgba(7,12,24,.42)!important;backdrop-filter:blur(3px)!important;opacity:0!important;pointer-events:none!important;transition:opacity 180ms ease!important}
+          header{z-index:130!important}
+          .mobile-nav-backdrop{position:fixed!important;inset:0!important;z-index:120!important;background:transparent!important;backdrop-filter:none!important;opacity:0!important;pointer-events:none!important}
           .mobile-nav-backdrop.is-visible{opacity:1!important;pointer-events:auto!important}
-          nav>details.mobile-nav>div{top:calc(100% + 8px)!important;right:12px!important;left:12px!important;width:auto!important;max-width:420px!important;margin-left:auto!important;padding:10px!important;border:1px solid rgba(185,168,255,.22)!important;border-radius:16px!important;background:#1a2440!important;box-shadow:0 18px 44px rgba(7,12,24,.42)!important;transform-origin:top right!important;animation:mobile-menu-in 220ms cubic-bezier(.2,.8,.2,1) both!important}
-          nav>details.mobile-nav>div>a{min-height:46px!important;padding:11px 14px!important;border:1px solid transparent!important;border-radius:12px!important;transition:transform 160ms ease,background 160ms ease,color 160ms ease,border-color 160ms ease!important}
-          nav>details.mobile-nav>div>a:hover,nav>details.mobile-nav>div>a:focus-visible{background:#303d61!important;border-color:rgba(185,168,255,.18)!important;color:#b9a8ff!important;transform:translateX(3px)!important;outline:none!important}
-          nav>details.mobile-nav>div>a.is-active{background:linear-gradient(90deg,rgba(255,107,74,.18),rgba(185,168,255,.12))!important;border-color:rgba(255,107,74,.28)!important;color:#fff!important}
-          nav>details.mobile-nav>div>a.is-active:before{width:3px!important;height:24px!important;margin-right:10px!important;border-radius:999px!important;background:#ff6b4a!important;content:""!important}
+          nav>details.mobile-nav{position:static!important;z-index:140!important}
+          nav>details.mobile-nav>summary{position:relative!important;z-index:125!important;display:flex!important;width:44px!important;height:44px!important;align-items:center!important;justify-content:center!important;padding:0!important;border:1px solid rgba(228,224,255,.35)!important;border-radius:12px!important;background:rgba(255,255,255,.08)!important;color:#fff!important;font-size:0!important;list-style:none!important;cursor:pointer!important}
+          nav>details.mobile-nav>summary::-webkit-details-marker{display:none!important}
+          nav>details.mobile-nav>summary:before{width:18px!important;height:2px!important;background:currentColor!important;box-shadow:0 -6px 0 currentColor,0 6px 0 currentColor!important;content:""!important}
+          nav>details.mobile-nav[open]>summary:before{box-shadow:0 0 0 transparent!important;transform:rotate(45deg)!important}
+          nav>details.mobile-nav[open]>summary:after{position:absolute!important;width:18px!important;height:2px!important;background:currentColor!important;content:""!important;transform:rotate(-45deg)!important}
+          nav>details.mobile-nav>.mobile-nav-panel{box-sizing:border-box!important;position:fixed!important;top:40px!important;left:50%!important;right:auto!important;z-index:140!important;display:flex!important;width:calc(100vw - 32px)!important;max-width:525px!important;max-height:calc(100vh - 56px)!important;flex-direction:column!important;gap:12px!important;overflow-y:auto!important;margin:0!important;padding:12px!important;border:1px solid rgba(185,168,255,.22)!important;border-radius:20px!important;background:#1a2440!important;box-shadow:0 18px 44px rgba(7,12,24,.42)!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translate(-50%,-8px) scale(.98)!important;transform-origin:top center!important;transition:opacity 200ms ease,visibility 200ms ease,transform 200ms cubic-bezier(.2,.8,.2,1)!important}
+          nav>details.mobile-nav[open]>.mobile-nav-panel{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:translate(-50%,0) scale(1)!important}
+          nav>details.mobile-nav>.mobile-nav-panel>a{box-sizing:border-box!important;display:flex!important;flex:0 0 50px!important;align-items:center!important;width:100%!important;min-height:50px!important;padding:8px 18px!important;border:1px solid transparent!important;border-radius:14px!important;color:#e4e0ff!important;font-size:18px!important;font-weight:600!important;line-height:1.3!important;text-decoration:none!important;white-space:nowrap!important;transition:background 160ms ease,border-color 160ms ease,color 160ms ease!important}
+          nav>details.mobile-nav>.mobile-nav-panel>a:hover,nav>details.mobile-nav>.mobile-nav-panel>a:focus-visible{background:#303d61!important;border-color:rgba(185,168,255,.18)!important;color:#fff!important;outline:none!important}
+          nav>details.mobile-nav>.mobile-nav-panel>a.is-active{background:linear-gradient(90deg,rgba(255,107,74,.16),rgba(185,168,255,.1))!important;border-color:rgba(255,107,74,.28)!important;color:#fff!important}
+          nav>details.mobile-nav>.mobile-nav-panel>a.is-active{flex-basis:59px!important;min-height:59px!important}
+          nav>details.mobile-nav>.mobile-nav-panel>a.is-active:before{flex:0 0 3px!important;width:3px!important;height:30px!important;margin-right:12px!important;border-radius:999px!important;background:#ff6b4a!important;content:""!important}
         }
-        @keyframes mobile-menu-in{from{opacity:0!important;transform:translateY(-8px) scale(.96)!important}to{opacity:1!important;transform:translateY(0) scale(1)!important}}
-        @media (prefers-reduced-motion:reduce){nav>details.mobile-nav>div,.mobile-nav-backdrop,nav>details.mobile-nav>div>a{animation:none!important;transition:none!important}}
+        @media (min-width:901px){.mobile-nav-backdrop{display:none!important}nav>details.mobile-nav{display:contents!important}nav>details.mobile-nav>summary{display:none!important}nav>details.mobile-nav>.mobile-nav-panel{display:flex!important;position:static!important;flex-direction:row!important;flex-wrap:wrap!important;width:auto!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:none!important}}
+        @media (prefers-reduced-motion:reduce){nav>details.mobile-nav>.mobile-nav-panel,.mobile-nav-backdrop,nav>details.mobile-nav>.mobile-nav-panel>a{animation:none!important;transition:none!important}}
       `;
       document.head.appendChild(polishedMenuStyle);
     }
-    const mobileMenu = document.querySelector('nav details.mobile-nav');
-    if (mobileMenu) {
-      mobileMenu.querySelector('summary')?.setAttribute('aria-expanded', 'false');
-      mobileMenu.addEventListener('toggle', () => syncMobileMenu(mobileMenu));
-      mobileMenu.querySelector('summary')?.addEventListener('click', () => {
-        window.requestAnimationFrame(() => syncMobileMenu(mobileMenu));
-        window.setTimeout(() => syncMobileMenu(mobileMenu), 80);
-        window.setTimeout(() => {
-          const backdrop = document.querySelector('.mobile-nav-backdrop');
-          if (mobileMenu.open && window.innerWidth <= 900) {
-            document.body.classList.add('mobile-nav-open');
-            backdrop?.classList.add('is-visible');
-          } else {
-            document.body.classList.remove('mobile-nav-open');
-            backdrop?.classList.remove('is-visible');
-          }
-        }, 100);
-      });
-      syncMobileMenu(mobileMenu);
-    }
     document.addEventListener('click', (event) => {
+      const target = event.target instanceof Element ? event.target : null;
       const mobileMenu = document.querySelector('nav details.mobile-nav');
-      const target = event.target;
-      if (mobileMenu && !window.matchMedia('(min-width: 901px)').matches && target instanceof Element) {
+      if (!target || !mobileMenu || window.matchMedia('(min-width: 901px)').matches) return;
+      if (target.closest('nav details.mobile-nav > summary')) {
+        window.setTimeout(syncMenu, 0);
+      } else {
         const link = target.closest('a[href^="#"]');
-        if (link && mobileMenu.contains(link)) {
-          mobileMenu.open = false;
-        } else if (!mobileMenu.contains(target)) {
-          mobileMenu.open = false;
-        }
+        if (link && mobileMenu.contains(link)) closeMenu();
+        else if (!mobileMenu.contains(target)) closeMenu();
       }
     }, true);
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
-        const mobileMenu = document.querySelector('nav details.mobile-nav');
-        if (mobileMenu?.open && !window.matchMedia('(min-width: 901px)').matches) {
-          mobileMenu.open = false;
-          mobileMenu.querySelector('summary')?.focus();
-        }
+        closeMenu();
+        document.querySelector('nav details.mobile-nav summary')?.focus();
       }
     });
-    window.addEventListener('hashchange', updateActiveNavLink);
+    window.addEventListener('hashchange', () => {
+      updateActiveNavLink();
+      if (window.innerWidth <= 900) closeMenu();
+    });
     updateActiveNavLink();
     window.requestAnimationFrame(syncMenu);
-    window.addEventListener('resize', syncMenu);
+    window.addEventListener('resize', () => {
+      const mobileMenu = document.querySelector('nav details.mobile-nav');
+      if (mobileMenu && window.innerWidth <= 900) mobileMenu.open = false;
+      syncMenu();
+    });
   } catch (err) {
     setStatus('Error unpacking: ' + err.message);
     console.error('Bundle unpack error:', err);
